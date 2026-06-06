@@ -177,11 +177,28 @@ input:focus{outline:none;border-color:#1a73e8}
     <div class="modal-body">
       <label for="newChatName">對話名稱</label>
       <input type="text" id="newChatName" placeholder="輸入對話名稱">
+      <label for="newChatPassword" style="margin-top:12px">密碼（選填）</label>
+      <input type="text" id="newChatPassword" placeholder="不設定則任何人可進入">
       <p class="modal-hint">建立後可再新增參與者</p>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" id="cancelNewChat">取消</button>
       <button class="btn-primary" id="confirmNewChat">建立</button>
+    </div>
+  </div>
+</div>
+
+<div id="passwordModal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header"><h3>輸入密碼</h3><button class="modal-close" id="closePasswordModal">&times;</button></div>
+    <div class="modal-body">
+      <label for="passwordInput">此對話需要密碼才能進入</label>
+      <input type="password" id="passwordInput" placeholder="請輸入密碼">
+      <p id="passwordError" style="color:#d93025;font-size:13px;margin-top:8px;display:none"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="cancelPassword">取消</button>
+      <button class="btn-primary" id="confirmPassword">確定</button>
     </div>
   </div>
 </div>
@@ -239,7 +256,7 @@ var ApiClient = (function () {
 </script>
 <script>
 var App = {
-  profile: null, apiClient: null, conversations: [], activeConvId: null, messages: [], pollTimer: null,
+  profile: null, apiClient: null, conversations: [], activeConvId: null, messages: [], pollTimer: null, unlocked: {},
   init: function () {
     var self = this;
     self.apiClient = new ApiClient(CONFIG.APPS_SCRIPT_URL);
@@ -257,6 +274,11 @@ var App = {
     document.getElementById('sendBtn').onclick = function () { self.sendMessage(); };
     document.getElementById('messageInput').onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); self.sendMessage(); } };
     document.getElementById('addParticipantBtn').onclick = function () { self.showParticipantModal(); };
+    document.getElementById('confirmPassword').onclick = function () { self.checkPasswordInput(); };
+    document.getElementById('passwordInput').onkeydown = function (e) { if (e.key === 'Enter') self.checkPasswordInput(); };
+    document.getElementById('cancelPassword').onclick = function () { self.hidePasswordModal(); };
+    document.getElementById('closePasswordModal').onclick = function () { self.hidePasswordModal(); };
+    document.getElementById('passwordModal').onclick = function (e) { if (e.target === e.currentTarget) self.hidePasswordModal(); };
     document.getElementById('newChatModal').onclick = function (e) { if (e.target === e.currentTarget) self.hideNewChatModal(); };
     document.getElementById('addParticipantModal').onclick = function (e) { if (e.target === e.currentTarget) self.hideParticipantModal(); };
     google.accounts.id.initialize({ client_id: CONFIG.CLIENT_ID, callback: function (res) { self.handleCredential(res); }, cancel_on_tap_outside: false });
@@ -321,7 +343,10 @@ var App = {
       list.appendChild(d);}
   },
   showEmptyState: function(){this.activeConvId=null;document.getElementById('chatView').classList.add('hidden');document.getElementById('emptyState').classList.remove('hidden');},
-  selectConversation: function(id){var self=this;self.activeConvId=id;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}if(!c)return;
+  selectConversation: function(id){var self=this;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}if(!c)return;
+    if(c.hasPassword&&!self.unlocked[id]&&c.createdBy!==self.profile.email){self._pendingConv=id;self.showPasswordModal();return;}
+    self._openConversation(id);},
+  _openConversation:function(id){var self=this;self.activeConvId=id;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}
     document.getElementById('emptyState').classList.add('hidden');document.getElementById('chatView').classList.remove('hidden');
     document.getElementById('chatName').textContent=c.name;document.getElementById('chatParticipants').textContent=(c.participants||[]).length?'參與者: '+(c.participants||[]).join(', '):'';
     self.renderConversationList();self.showLoading(true);
@@ -353,8 +378,9 @@ var App = {
     }).catch(function(){});
   },
   createConversation:function(){var self=this,inp=document.getElementById('newChatName'),n=inp.value.trim();if(!n){self.toast('請輸入對話名稱','error');return;}
-    self.showLoading(true);self.apiClient.call('createConversation',{name:n}).then(function(r){var now=new Date().toISOString(),cv={id:r.convId,name:n,participants:[self.profile.email],createdBy:self.profile.email,createdAt:now,updatedAt:now,lastMessage:''};
-      self.conversations.unshift(cv);self.hideNewChatModal();inp.value='';self.renderConversationList();return self.selectConversation(cv.id);}).catch(function(e){self.toast('建立失敗: '+e.message,'error');}).then(function(){self.showLoading(false);});
+    var pwd=document.getElementById('newChatPassword').value.trim();var params={name:n};if(pwd)params.password=pwd;
+    self.showLoading(true);self.apiClient.call('createConversation',params).then(function(r){var now=new Date().toISOString(),cv={id:r.convId,name:n,participants:[self.profile.email],createdBy:self.profile.email,createdAt:now,updatedAt:now,lastMessage:'',hasPassword:!!pwd};
+      self.conversations.unshift(cv);self.hideNewChatModal();inp.value='';document.getElementById('newChatPassword').value='';self.renderConversationList();return self.selectConversation(cv.id);}).catch(function(e){self.toast('建立失敗: '+e.message,'error');}).then(function(){self.showLoading(false);});
   },
   addParticipant:function(){var self=this,inp=document.getElementById('participantEmail'),e=inp.value.trim();if(!e){self.toast('請輸入 Email','error');return;}if(!self.activeConvId)return;
     self.showLoading(true);self.apiClient.call('addParticipant',{convId:self.activeConvId,email:e}).then(function(){
@@ -372,6 +398,15 @@ var App = {
   hideNewChatModal:function(){document.getElementById('newChatModal').classList.add('hidden');document.getElementById('newChatName').value='';},
   showParticipantModal:function(){if(!this.activeConvId){this.toast('請先選擇一個對話','error');return;}document.getElementById('addParticipantModal').classList.remove('hidden');document.getElementById('participantEmail').focus();},
   hideParticipantModal:function(){document.getElementById('addParticipantModal').classList.add('hidden');document.getElementById('participantEmail').value='';},
+  showPasswordModal:function(){document.getElementById('passwordModal').classList.remove('hidden');document.getElementById('passwordInput').value='';document.getElementById('passwordError').style.display='none';document.getElementById('passwordInput').focus();},
+  hidePasswordModal:function(){document.getElementById('passwordModal').classList.add('hidden');document.getElementById('passwordInput').value='';document.getElementById('passwordError').style.display='none';},
+  checkPasswordInput:function(){var self=this,pwd=document.getElementById('passwordInput').value.trim();if(!pwd||!self._pendingConv)return;
+    self.showLoading(true);self.apiClient.call('checkPassword',{convId:self._pendingConv,password:pwd}).then(function(r){
+      self.showLoading(false);
+      if(r.valid){self.unlocked[self._pendingConv]=true;self.hidePasswordModal();var id=self._pendingConv;self._pendingConv=null;self._openConversation(id);}
+      else{document.getElementById('passwordError').textContent='密碼錯誤';document.getElementById('passwordError').style.display='block';}
+    }).catch(function(e){self.showLoading(false);document.getElementById('passwordError').textContent='驗證失敗: '+e.message;document.getElementById('passwordError').style.display='block';});
+  },
   logout:function(){this.stopPolling();this.profile=null;this.conversations=[];this.activeConvId=null;this.messages=[];localStorage.removeItem('chatapp_email');localStorage.removeItem('chatapp_name');this.showLogin();},
   toast:function(m,t){var e=document.getElementById('toast');e.textContent=m;e.className=t||'';e.classList.remove('hidden');clearTimeout(this._t);this._t=setTimeout(function(){e.classList.add('hidden');},3000);},
   _e:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;},
