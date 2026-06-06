@@ -5,103 +5,101 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChatApp - Google Drive 聊天</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif; background: #f0f2f5; color: #1f1f1f; overflow: hidden; }
-input, button { font-family: inherit; }
-button { cursor: pointer; border: none; background: none; }
-button:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
-input:focus { outline: none; border-color: #1a73e8; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #c4c7cc; border-radius: 3px; }
-.hidden { display: none !important; }
-#loadingOverlay { position: fixed; inset: 0; z-index: 9999; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
-.spinner { width: 40px; height: 40px; border: 4px solid #e0e0e0; border-top-color: #1a73e8; border-radius: 50%; animation: spin .8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-#loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #e8f0fe 0%, #f0f2f5 100%); padding: 20px; }
-.login-card { background: #fff; border-radius: 24px; padding: 48px 40px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
-.login-card h1 { font-size: 28px; font-weight: 600; margin: 16px 0 8px; }
-.login-subtitle { color: #5f6368; margin-bottom: 32px; font-size: 15px; }
-.login-hint { color: #5f6368; font-size: 12px; margin-top: 24px; line-height: 1.6; }
-#gSignInButton { display: flex; justify-content: center; }
-#appScreen { display: flex; height: 100vh; width: 100vw; }
-#sidebar { width: 320px; min-width: 320px; background: #fff; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; height: 100vh; }
-.sidebar-header { padding: 16px 20px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.sidebar-header h2 { font-size: 18px; font-weight: 600; }
-.sidebar-header button { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1a73e8; background: #e8f0fe; transition: background .15s; }
-.sidebar-header button:hover { background: #d2e3fc; }
-#conversationList { flex: 1; overflow-y: auto; padding: 8px; }
-.conv-item { display: flex; flex-direction: column; padding: 12px 16px; border-radius: 8px; cursor: pointer; transition: background .15s; gap: 4px; }
-.conv-item:hover { background: #f5f5f5; }
-.conv-item.active { background: #e8f0fe; }
-.conv-item .conv-top { display: flex; justify-content: space-between; align-items: center; }
-.conv-item .conv-name { font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.conv-item .conv-time { font-size: 11px; color: #5f6368; flex-shrink: 0; margin-left: 8px; }
-.conv-item .conv-preview { font-size: 13px; color: #5f6368; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.conv-item .conv-delete { font-size: 11px; color: #d93025; display: none; margin-top: 4px; align-self: flex-end; background: none; padding: 2px 6px; border-radius: 4px; }
-.conv-item .conv-delete:hover { background: #fce8e6; }
-.conv-item:hover .conv-delete { display: inline-block; }
-.sidebar-footer { padding: 12px 16px; border-top: 1px solid #e0e0e0; display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-.user-profile { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
-.avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: #e8f0fe; }
-.user-info { min-width: 0; }
-.user-name { font-size: 13px; font-weight: 500; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-email { font-size: 11px; color: #5f6368; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#logoutBtn { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #5f6368; flex-shrink: 0; transition: background .15s; }
-#logoutBtn:hover { background: #f5f5f5; color: #d93025; }
-#mainArea { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f0f2f5; }
-#emptyState { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: #5f6368; }
-#emptyState h2 { color: #1f1f1f; font-size: 20px; }
-#emptyState p { font-size: 14px; }
-#emptyState .btn-primary { margin-top: 12px; }
-#chatView { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.chat-header { padding: 12px 24px; border-bottom: 1px solid #e0e0e0; background: #fff; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.chat-header-info { min-width: 0; }
-.chat-header-info h3 { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.chat-participants { font-size: 12px; color: #5f6368; }
-.chat-header-actions button { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #5f6368; transition: background .15s; }
-.chat-header-actions button:hover { background: #f5f5f5; color: #1a73e8; }
-#messageContainer { flex: 1; overflow-y: auto; padding: 20px 24px; }
-#messageList { display: flex; flex-direction: column; gap: 4px; }
-.message-wrapper { display: flex; gap: 8px; max-width: 75%; margin-bottom: 4px; }
-.message-wrapper.own { align-self: flex-end; flex-direction: row-reverse; }
-.message-wrapper.other { align-self: flex-start; }
-.message-avatar { width: 32px; height: 32px; border-radius: 50%; background: #1a73e8; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; flex-shrink: 0; align-self: flex-end; }
-.message-content { display: flex; flex-direction: column; gap: 2px; }
-.message-bubble { padding: 8px 14px; border-radius: 18px; font-size: 14px; line-height: 1.5; word-break: break-word; }
-.message-wrapper.own .message-bubble { background: #1a73e8; color: #fff; border-bottom-right-radius: 4px; }
-.message-wrapper.other .message-bubble { background: #fff; color: #1f1f1f; box-shadow: 0 1px 2px rgba(0,0,0,.08); border-bottom-left-radius: 4px; }
-.message-meta { display: flex; gap: 6px; align-items: center; padding: 0 4px; font-size: 11px; color: #5f6368; }
-.message-wrapper.own .message-meta { justify-content: flex-end; }
-.message-sender { font-weight: 500; }
-.message-time { font-size: 10px; }
-.day-divider { text-align: center; padding: 16px 0 8px; font-size: 12px; color: #5f6368; }
-.chat-input { padding: 12px 24px 16px; border-top: 1px solid #e0e0e0; background: #fff; display: flex; gap: 12px; flex-shrink: 0; }
-.chat-input input { flex: 1; height: 44px; padding: 0 16px; border: 1px solid #e0e0e0; border-radius: 22px; font-size: 15px; background: #f0f2f5; transition: border-color .15s; }
-.chat-input input:focus { border-color: #1a73e8; background: #fff; }
-#sendBtn { height: 44px; padding: 0 24px; background: #1a73e8; color: #fff; border-radius: 22px; font-size: 14px; font-weight: 500; transition: background .15s; }
-#sendBtn:hover { background: #1557b0; }
-#sendBtn:disabled { opacity: .4; cursor: not-allowed; }
-.btn-primary { height: 40px; padding: 0 24px; background: #1a73e8; color: #fff; border-radius: 20px; font-size: 14px; font-weight: 500; transition: background .15s; display: inline-flex; align-items: center; justify-content: center; }
-.btn-primary:hover { background: #1557b0; }
-.btn-secondary { height: 40px; padding: 0 24px; background: transparent; color: #1f1f1f; border: 1px solid #e0e0e0; border-radius: 20px; font-size: 14px; transition: background .15s; display: inline-flex; align-items: center; justify-content: center; }
-.btn-secondary:hover { background: #f5f5f5; }
-.modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; padding: 20px; }
-.modal { background: #fff; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 4px 20px rgba(0,0,0,.15); }
-.modal-header { padding: 20px 24px 0; display: flex; align-items: center; justify-content: space-between; }
-.modal-header h3 { font-size: 18px; font-weight: 600; }
-.modal-close { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #5f6368; transition: background .15s; }
-.modal-close:hover { background: #f5f5f5; }
-.modal-body { padding: 20px 24px; }
-.modal-body label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #1f1f1f; }
-.modal-body input { width: 100%; height: 44px; padding: 0 14px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; }
-.modal-hint { font-size: 12px; color: #5f6368; margin-top: 8px; }
-.modal-footer { padding: 0 24px 20px; display: flex; gap: 10px; justify-content: flex-end; }
-#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; background: #323232; color: #fff; padding: 12px 24px; border-radius: 8px; font-size: 14px; box-shadow: 0 4px 20px rgba(0,0,0,.15); animation: toastIn .3s ease; }
-#toast.error { background: #d93025; }
-#toast.success { background: #188038; }
-@keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans TC',sans-serif;background:#f0f2f5;color:#1f1f1f;overflow:hidden}
+input,button{font-family:inherit}
+button{cursor:pointer;border:none;background:none}
+input:focus{outline:none;border-color:#1a73e8}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:#c4c7cc;border-radius:3px}
+.hidden{display:none!important}
+#loadingOverlay{position:fixed;inset:0;z-index:9999;background:#f0f2f5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.spinner{width:40px;height:40px;border:4px solid #e0e0e0;border-top-color:#1a73e8;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#e8f0fe 0%,#f0f2f5 100%);padding:20px}
+.login-card{background:#fff;border-radius:24px;padding:48px 40px;width:100%;max-width:400px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.login-card h1{font-size:28px;font-weight:600;margin:16px 0 8px}
+.login-subtitle{color:#5f6368;margin-bottom:32px;font-size:15px}
+.login-hint{color:#5f6368;font-size:12px;margin-top:24px;line-height:1.6}
+#gSignInButton{display:flex;justify-content:center}
+#appScreen{display:flex;height:100vh;width:100vw}
+#sidebar{width:320px;min-width:320px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;height:100vh}
+.sidebar-header{padding:16px 20px;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sidebar-header h2{font-size:18px;font-weight:600}
+.sidebar-header button{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#1a73e8;background:#e8f0fe}
+.sidebar-header button:hover{background:#d2e3fc}
+#conversationList{flex:1;overflow-y:auto;padding:8px}
+.conv-item{display:flex;flex-direction:column;padding:12px 16px;border-radius:8px;cursor:pointer;gap:4px}
+.conv-item:hover{background:#f5f5f5}
+.conv-item.active{background:#e8f0fe}
+.conv-item .conv-top{display:flex;justify-content:space-between;align-items:center}
+.conv-item .conv-name{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-item .conv-time{font-size:11px;color:#5f6368;flex-shrink:0;margin-left:8px}
+.conv-item .conv-preview{font-size:13px;color:#5f6368;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv-item .conv-delete{font-size:11px;color:#d93025;display:none;margin-top:4px;align-self:flex-end;padding:2px 6px;border-radius:4px}
+.conv-item .conv-delete:hover{background:#fce8e6}
+.conv-item:hover .conv-delete{display:inline-block}
+.sidebar-footer{padding:12px 16px;border-top:1px solid #e0e0e0;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.user-profile{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;background:#e8f0fe}
+.user-info{min-width:0}
+.user-name{font-size:13px;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-email{font-size:11px;color:#5f6368;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#logoutBtn{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#5f6368;flex-shrink:0}
+#logoutBtn:hover{background:#f5f5f5;color:#d93025}
+#mainArea{flex:1;display:flex;flex-direction:column;min-width:0;background:#f0f2f5}
+#emptyState{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:40px;color:#5f6368}
+#emptyState h2{color:#1f1f1f;font-size:20px}
+#emptyState p{font-size:14px}
+#emptyState .btn-primary{margin-top:12px}
+#chatView{flex:1;display:flex;flex-direction:column;min-height:0}
+.chat-header{padding:12px 24px;border-bottom:1px solid #e0e0e0;background:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.chat-header-info{min-width:0}
+.chat-header-info h3{font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-participants{font-size:12px;color:#5f6368}
+.chat-header-actions button{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#5f6368}
+.chat-header-actions button:hover{background:#f5f5f5;color:#1a73e8}
+#messageContainer{flex:1;overflow-y:auto;padding:20px 24px}
+#messageList{display:flex;flex-direction:column;gap:4px}
+.message-wrapper{display:flex;gap:8px;max-width:75%;margin-bottom:4px}
+.message-wrapper.own{align-self:flex-end;flex-direction:row-reverse}
+.message-wrapper.other{align-self:flex-start}
+.message-avatar{width:32px;height:32px;border-radius:50%;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;align-self:flex-end}
+.message-content{display:flex;flex-direction:column;gap:2px}
+.message-bubble{padding:8px 14px;border-radius:18px;font-size:14px;line-height:1.5;word-break:break-word}
+.message-wrapper.own .message-bubble{background:#1a73e8;color:#fff;border-bottom-right-radius:4px}
+.message-wrapper.other .message-bubble{background:#fff;color:#1f1f1f;box-shadow:0 1px 2px rgba(0,0,0,.08);border-bottom-left-radius:4px}
+.message-meta{display:flex;gap:6px;align-items:center;padding:0 4px;font-size:11px;color:#5f6368}
+.message-wrapper.own .message-meta{justify-content:flex-end}
+.message-sender{font-weight:500}
+.message-time{font-size:10px}
+.day-divider{text-align:center;padding:16px 0 8px;font-size:12px;color:#5f6368}
+.chat-input{padding:12px 24px 16px;border-top:1px solid #e0e0e0;background:#fff;display:flex;gap:12px;flex-shrink:0}
+.chat-input input{flex:1;height:44px;padding:0 16px;border:1px solid #e0e0e0;border-radius:22px;font-size:15px;background:#f0f2f5}
+.chat-input input:focus{border-color:#1a73e8;background:#fff}
+#sendBtn{height:44px;padding:0 24px;background:#1a73e8;color:#fff;border-radius:22px;font-size:14px;font-weight:500}
+#sendBtn:hover{background:#1557b0}
+#sendBtn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{height:40px;padding:0 24px;background:#1a73e8;color:#fff;border-radius:20px;font-size:14px;font-weight:500;display:inline-flex;align-items:center;justify-content:center}
+.btn-primary:hover{background:#1557b0}
+.btn-secondary{height:40px;padding:0 24px;background:transparent;color:#1f1f1f;border:1px solid #e0e0e0;border-radius:20px;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
+.btn-secondary:hover{background:#f5f5f5}
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:16px;width:100%;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.15)}
+.modal-header{padding:20px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:18px;font-weight:600}
+.modal-close{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;color:#5f6368}
+.modal-close:hover{background:#f5f5f5}
+.modal-body{padding:20px 24px}
+.modal-body label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:#1f1f1f}
+.modal-body input{width:100%;height:44px;padding:0 14px;border:1px solid #e0e0e0;border-radius:8px;font-size:15px}
+.modal-hint{font-size:12px;color:#5f6368;margin-top:8px}
+.modal-footer{padding:0 24px 20px;display:flex;gap:10px;justify-content:flex-end}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#323232;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:toastIn .3s ease}
+#toast.error{background:#d93025}
+#toast.success{background:#188038}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 </style>
 </head>
 <body>
@@ -133,9 +131,7 @@ input:focus { outline: none; border-color: #1a73e8; }
   <aside id="sidebar">
     <div class="sidebar-header">
       <h2>對話</h2>
-      <button id="newChatBtn" title="新增對話">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
-      </button>
+      <button id="newChatBtn" title="新增對話"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg></button>
     </div>
     <div id="conversationList"></div>
     <div class="sidebar-footer">
@@ -146,23 +142,16 @@ input:focus { outline: none; border-color: #1a73e8; }
           <span id="userEmail" class="user-email"></span>
         </div>
       </div>
-      <button id="logoutBtn" title="登出">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M3 3h7v2H5v10h5v2H3V3zm13.707 5.293l-3-3L12.293 6.707 14.586 9H8v2h6.586l-2.293 2.293 1.414 1.414 3-3a1 1 0 000-1.414z"/></svg>
-      </button>
+      <button id="logoutBtn" title="登出"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M3 3h7v2H5v10h5v2H3V3zm13.707 5.293l-3-3L12.293 6.707 14.586 9H8v2h6.586l-2.293 2.293 1.414 1.414 3-3a1 1 0 000-1.414z"/></svg></button>
     </div>
   </aside>
-
   <main id="mainArea">
     <div id="emptyState">
-      <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-        <rect x="8" y="12" width="64" height="56" rx="8" stroke="#c4c7cc" stroke-width="2" fill="none"/>
-        <path d="M24 32h32M24 42h24M24 52h16" stroke="#c4c7cc" stroke-width="2" stroke-linecap="round"/>
-      </svg>
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none"><rect x="8" y="12" width="64" height="56" rx="8" stroke="#c4c7cc" stroke-width="2" fill="none"/><path d="M24 32h32M24 42h24M24 52h16" stroke="#c4c7cc" stroke-width="2" stroke-linecap="round"/></svg>
       <h2>歡迎使用 ChatApp</h2>
       <p>選擇一個對話或建立新的對話</p>
       <button id="emptyNewChatBtn" class="btn-primary">建立新對話</button>
     </div>
-
     <div id="chatView" class="hidden">
       <div class="chat-header">
         <div class="chat-header-info">
@@ -170,14 +159,10 @@ input:focus { outline: none; border-color: #1a73e8; }
           <span id="chatParticipants" class="chat-participants"></span>
         </div>
         <div class="chat-header-actions">
-          <button id="addParticipantBtn" title="新增參與者">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
-          </button>
+          <button id="addParticipantBtn" title="新增參與者"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg></button>
         </div>
       </div>
-      <div id="messageContainer">
-        <div id="messageList"></div>
-      </div>
+      <div id="messageContainer"><div id="messageList"></div></div>
       <div class="chat-input">
         <input type="text" id="messageInput" placeholder="輸入訊息..." autocomplete="off">
         <button id="sendBtn">傳送</button>
@@ -188,10 +173,7 @@ input:focus { outline: none; border-color: #1a73e8; }
 
 <div id="newChatModal" class="modal-overlay hidden">
   <div class="modal">
-    <div class="modal-header">
-      <h3>新增對話</h3>
-      <button class="modal-close" id="closeNewChatModal">&times;</button>
-    </div>
+    <div class="modal-header"><h3>新增對話</h3><button class="modal-close" id="closeNewChatModal">&times;</button></div>
     <div class="modal-body">
       <label for="newChatName">對話名稱</label>
       <input type="text" id="newChatName" placeholder="輸入對話名稱">
@@ -206,10 +188,7 @@ input:focus { outline: none; border-color: #1a73e8; }
 
 <div id="addParticipantModal" class="modal-overlay hidden">
   <div class="modal">
-    <div class="modal-header">
-      <h3>新增參與者</h3>
-      <button class="modal-close" id="closeParticipantModal">&times;</button>
-    </div>
+    <div class="modal-header"><h3>新增參與者</h3><button class="modal-close" id="closeParticipantModal">&times;</button></div>
     <div class="modal-body">
       <label for="participantEmail">對方的 Email</label>
       <input type="email" id="participantEmail" placeholder="example@gmail.com">
@@ -226,21 +205,22 @@ input:focus { outline: none; border-color: #1a73e8; }
 <script src="https://accounts.google.com/gsi/client"></script>
 <script>
 var CONFIG = {
-  CLIENT_ID: '568538555158-1vli43gj6i7on3mn5e1vpt0sjbhvp9tn.apps.googleusercontent.com',
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwZnRGIwOj2guh4bla04K_pFoV09E5yHrQ1iNzZOn3HkwfnIAWNM5aLpGKORreMDL_vWg/exec',
+  CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',
+  APPS_SCRIPT_URL: 'YOUR_APPS_SCRIPT_URL_HERE',
   POLL_INTERVAL: 3000
 };
 </script>
 <script>
 var ApiClient = (function () {
-  function ApiClient(url) { this.url = url; this.idToken = null; }
-  ApiClient.prototype.setIdToken = function (t) { this.idToken = t; };
+  function ApiClient(url) { this.url = url; this.email = ''; this.name = ''; }
+  ApiClient.prototype.setUser = function (email, name) { this.email = email; this.name = name; };
   ApiClient.prototype.call = function (action, params) {
     var self = this;
     return new Promise(function (resolve, reject) {
       var cb = 'c' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       var q = new URLSearchParams();
-      q.set('callback', cb); q.set('action', action); q.set('token', self.idToken || '');
+      q.set('callback', cb); q.set('action', action);
+      q.set('email', self.email); q.set('name', self.name);
       if (params) for (var key in params) if (params.hasOwnProperty(key))
         q.set(key, typeof params[key] === 'object' ? JSON.stringify(params[key]) : String(params[key]));
       window[cb] = function (res) {
@@ -280,187 +260,122 @@ var App = {
     document.getElementById('newChatModal').onclick = function (e) { if (e.target === e.currentTarget) self.hideNewChatModal(); };
     document.getElementById('addParticipantModal').onclick = function (e) { if (e.target === e.currentTarget) self.hideParticipantModal(); };
     google.accounts.id.initialize({ client_id: CONFIG.CLIENT_ID, callback: function (res) { self.handleCredential(res); }, cancel_on_tap_outside: false });
-    var saved = localStorage.getItem('chatapp_idtoken');
-    var expiry = localStorage.getItem('chatapp_idtoken_expiry');
-    if (saved && expiry && Date.now() < parseInt(expiry)) {
-      try {
-        var payload = decodeJWT(saved);
-        self.profile = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || '' };
-        self.apiClient.setIdToken(saved);
-        self.showLoading(true);
-        self.initApp().then(function () { self.showLoading(false); }).catch(function () { self.showLogin(); self.showLoading(false); });
-      } catch (e) { self.showLogin(); }
-    } else { self.showLogin(); }
+    var saved = localStorage.getItem('chatapp_email');
+    var savedName = localStorage.getItem('chatapp_name');
+    if (saved) {
+      self.profile = { email: saved, name: savedName || saved, picture: '' };
+      self.apiClient.setUser(saved, savedName || saved);
+      self.showLoading(true);
+      self.initApp().then(function () { self.showLoading(false); }).catch(function (e) { self.toast('初始化失敗: '+e.message,'error'); self.showLogin(); self.showLoading(false); });
+    } else {
+      self.showLogin();
+    }
   },
   handleCredential: function (response) {
     var self = this;
     var payload = decodeJWT(response.credential);
     self.profile = { email: payload.email, name: payload.name || payload.email, picture: payload.picture || '' };
-    self.apiClient.setIdToken(response.credential);
-    localStorage.setItem('chatapp_idtoken', response.credential);
-    localStorage.setItem('chatapp_idtoken_expiry', String((payload.iat + 3600) * 1000));
+    self.apiClient.setUser(payload.email, payload.name || payload.email);
+    localStorage.setItem('chatapp_email', payload.email);
+    localStorage.setItem('chatapp_name', payload.name || payload.email);
     self.showLoading(true);
-    self.initApp().catch(function (e) { self.toast('初始化失敗: ' + e.message, 'error'); self.showLoading(false); });
+    self.initApp().catch(function (e) { self.toast('初始化失敗: '+e.message,'error'); self.showLoading(false); });
   },
   initApp: function () {
     var self = this;
     return self.apiClient.call('init').then(function () { self.showApp(); return self.loadConversations(); });
   },
-  showLoading: function (show) { document.getElementById('loadingOverlay').classList.toggle('hidden', !show); },
+  showLoading: function (v) { document.getElementById('loadingOverlay').classList.toggle('hidden',!v); },
   showLogin: function () {
-    var self = this;
+    var self=this;
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appScreen').classList.add('hidden');
-    google.accounts.id.renderButton(document.getElementById('gSignInButton'), { type: 'standard', shape: 'pill', size: 'large', text: 'signin_with', theme: 'outline' });
+    google.accounts.id.renderButton(document.getElementById('gSignInButton'),{type:'standard',shape:'pill',size:'large',text:'signin_with',theme:'outline'});
     self.showLoading(false);
   },
   showApp: function () {
-    var self = this;
+    var self=this;
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appScreen').classList.remove('hidden');
-    var avatar = document.getElementById('userAvatar');
-    avatar.src = self.profile.picture || '';
-    avatar.onerror = function () { avatar.style.display = 'none'; };
-    document.getElementById('userName').textContent = self.profile.name || '';
-    document.getElementById('userEmail').textContent = self.profile.email || '';
+    var a=document.getElementById('userAvatar'); a.src=self.profile.picture||''; a.onerror=function(){a.style.display='none'};
+    document.getElementById('userName').textContent=self.profile.name||'';
+    document.getElementById('userEmail').textContent=self.profile.email||'';
     self.showLoading(false);
   },
   loadConversations: function () {
-    var self = this;
-    return self.apiClient.call('getConversations').then(function (convs) {
-      self.conversations = convs || [];
-      self.renderConversationList();
-      if (convs.length > 0) {
-        if (!self.activeConvId) return self.selectConversation(convs[0].id);
-        for (var i = 0; i < convs.length; i++) { if (convs[i].id === self.activeConvId) return self.selectConversation(self.activeConvId); }
-        self.showEmptyState();
-      } else { self.showEmptyState(); }
-    }).catch(function (e) { self.toast('載入對話失敗: ' + e.message, 'error'); });
+    var self=this;
+    return self.apiClient.call('getConversations').then(function(c){
+      self.conversations=c||[]; self.renderConversationList();
+      if (c.length>0) { if (!self.activeConvId) return self.selectConversation(c[0].id);
+        for (var i=0;i<c.length;i++){if(c[i].id===self.activeConvId)return self.selectConversation(self.activeConvId);}
+        self.showEmptyState(); } else self.showEmptyState();
+    }).catch(function(e){self.toast('載入對話失敗: '+e.message,'error');});
   },
   renderConversationList: function () {
-    var self = this;
-    var list = document.getElementById('conversationList');
-    list.innerHTML = '';
-    if (self.conversations.length === 0) { list.innerHTML = '<div style="padding:20px;text-align:center;color:#5f6368;font-size:13px">尚無對話，點擊 + 建立</div>'; return; }
-    var sorted = self.conversations.slice().sort(function (a, b) { return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt); });
-    for (var i = 0; i < sorted.length; i++) {
-      var conv = sorted[i];
-      var div = document.createElement('div');
-      div.className = 'conv-item' + (conv.id === self.activeConvId ? ' active' : '');
-      var lastMsg = conv.lastMessage || '暫無訊息';
-      var time = conv.updatedAt || conv.createdAt || '';
-      div.innerHTML = '<div class="conv-top"><span class="conv-name">'+self._escape(conv.name)+'</span><span class="conv-time">'+(time?self._formatTime(time):'')+'</span></div><div class="conv-preview">'+self._escape(lastMsg)+'</div><button class="conv-delete">刪除</button>';
-      (function (cid) { div.onclick = function (e) { if (e.target.classList.contains('conv-delete')) { self.deleteConversation(cid); return; } self.selectConversation(cid); }; })(conv.id);
-      list.appendChild(div);
-    }
+    var self=this,list=document.getElementById('conversationList'); list.innerHTML='';
+    if (!self.conversations.length){list.innerHTML='<div style="padding:20px;text-align:center;color:#5f6368;font-size:13px">尚無對話，點擊 + 建立</div>';return;}
+    var s=self.conversations.slice().sort(function(a,b){return new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt);});
+    for (var i=0;i<s.length;i++){var c=s[i],d=document.createElement('div'); d.className='conv-item'+(c.id===self.activeConvId?' active':'');
+      d.innerHTML='<div class="conv-top"><span class="conv-name">'+self._e(c.name)+'</span><span class="conv-time">'+(c.updatedAt||c.createdAt?self._t(c.updatedAt||c.createdAt):'')+'</span></div><div class="conv-preview">'+self._e(c.lastMessage||'暫無訊息')+'</div><button class="conv-delete">刪除</button>';
+      (function(id){d.onclick=function(e){if(e.target.classList.contains('conv-delete')){self.deleteConversation(id);return;}self.selectConversation(id);};})(c.id);
+      list.appendChild(d);}
   },
-  showEmptyState: function () { this.activeConvId = null; document.getElementById('chatView').classList.add('hidden'); document.getElementById('emptyState').classList.remove('hidden'); },
-  selectConversation: function (convId) {
-    var self = this;
-    self.activeConvId = convId;
-    var conv = null;
-    for (var i = 0; i < self.conversations.length; i++) { if (self.conversations[i].id === convId) { conv = self.conversations[i]; break; } }
-    if (!conv) return;
-    document.getElementById('emptyState').classList.add('hidden');
-    document.getElementById('chatView').classList.remove('hidden');
-    document.getElementById('chatName').textContent = conv.name;
-    document.getElementById('chatParticipants').textContent = (conv.participants||[]).length > 0 ? '參與者: '+(conv.participants||[]).join(', ') : '';
-    self.renderConversationList();
-    self.showLoading(true);
-    self.apiClient.call('getMessages', { convId: convId }).then(function (msgs) { self.messages = msgs||[]; self.renderMessages(); self.startPolling(); self.showLoading(false); }).catch(function (e) { self.toast('載入訊息失敗: '+e.message,'error'); self.showLoading(false); });
+  showEmptyState: function(){this.activeConvId=null;document.getElementById('chatView').classList.add('hidden');document.getElementById('emptyState').classList.remove('hidden');},
+  selectConversation: function(id){var self=this;self.activeConvId=id;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}if(!c)return;
+    document.getElementById('emptyState').classList.add('hidden');document.getElementById('chatView').classList.remove('hidden');
+    document.getElementById('chatName').textContent=c.name;document.getElementById('chatParticipants').textContent=(c.participants||[]).length?'參與者: '+(c.participants||[]).join(', '):'';
+    self.renderConversationList();self.showLoading(true);
+    self.apiClient.call('getMessages',{convId:id}).then(function(m){self.messages=m||[];self.renderMessages();self.startPolling();self.showLoading(false);}).catch(function(e){self.toast('載入訊息失敗: '+e.message,'error');self.showLoading(false);});
   },
-  renderMessages: function () {
-    var self = this;
-    var container = document.getElementById('messageList');
-    container.innerHTML = '';
-    if (self.messages.length === 0) { container.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#5f6368;font-size:14px">尚無訊息，輸入第一則訊息開始對話</div>'; return; }
-    var lastDate = '';
-    var myEmail = self.profile.email;
-    for (var i = 0; i < self.messages.length; i++) {
-      var msg = self.messages[i];
-      var msgDate = new Date(msg.timestamp).toLocaleDateString('zh-TW');
-      if (msgDate !== lastDate) {
-        lastDate = msgDate;
-        var divider = document.createElement('div'); divider.className = 'day-divider';
-        var today = new Date().toLocaleDateString('zh-TW');
-        var yesterday = new Date(Date.now()-86400000).toLocaleDateString('zh-TW');
-        divider.textContent = msgDate === today ? '今天' : msgDate === yesterday ? '昨天' : msgDate;
-        container.appendChild(divider);
-      }
-      var isOwn = msg.sender === myEmail;
-      var wrapper = document.createElement('div');
-      wrapper.className = 'message-wrapper '+(isOwn?'own':'other');
-      var initials = (msg.senderName||msg.sender||'?').charAt(0).toUpperCase();
-      wrapper.innerHTML = '<div class="message-avatar">'+self._escape(initials)+'</div><div class="message-content">'+(isOwn?'':'<div class="message-meta"><span class="message-sender">'+self._escape(msg.senderName||msg.sender)+'</span></div>')+'<div class="message-bubble">'+self._escape(msg.content)+'</div><div class="message-meta"><span class="message-time">'+self._formatTime(msg.timestamp)+'</span></div></div>';
-      container.appendChild(wrapper);
-    }
-    self.scrollToBottom();
+  renderMessages: function(){var self=this,ct=document.getElementById('messageList');ct.innerHTML='';
+    if(!self.messages.length){ct.innerHTML='<div style="text-align:center;padding:40px 20px;color:#5f6368;font-size:14px">尚無訊息</div>';return;}
+    var ld='',me=self.profile.email;
+    for(var i=0;i<self.messages.length;i++){var m=self.messages[i],md=new Date(m.timestamp).toLocaleDateString('zh-TW');
+      if(md!==ld){ld=md;var dv=document.createElement('div');dv.className='day-divider';var t=new Date().toLocaleDateString('zh-TW'),y=new Date(Date.now()-86400000).toLocaleDateString('zh-TW');dv.textContent=md===t?'今天':md===y?'昨天':md;ct.appendChild(dv);}
+      var own=m.sender===me,w=document.createElement('div');w.className='message-wrapper '+(own?'own':'other');
+      w.innerHTML='<div class="message-avatar">'+self._e((m.senderName||m.sender||'?').charAt(0).toUpperCase())+'</div><div class="message-content">'+(own?'':'<div class="message-meta"><span class="message-sender">'+self._e(m.senderName||m.sender)+'</span></div>')+'<div class="message-bubble">'+self._e(m.content)+'</div><div class="message-meta"><span class="message-time">'+self._t(m.timestamp)+'</span></div></div>';
+      ct.appendChild(w);}self.scrollToBottom();
   },
-  scrollToBottom: function () { var mc = document.getElementById('messageContainer'); requestAnimationFrame(function () { mc.scrollTop = mc.scrollHeight; }); },
-  sendMessage: function () {
-    var self = this;
-    var input = document.getElementById('messageInput');
-    var content = input.value.trim();
-    if (!content||!self.activeConvId) return;
-    document.getElementById('sendBtn').disabled = true;
-    var msg = { id: 'msg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8), content: content, timestamp: new Date().toISOString() };
-    input.value = ''; input.focus();
-    self.apiClient.call('addMessage',{convId:self.activeConvId,message:JSON.stringify(msg)}).then(function() {
-      msg.sender=self.profile.email; msg.senderName=self.profile.name; self.messages.push(msg); self.renderMessages();
-      for (var i=0;i<self.conversations.length;i++) { if (self.conversations[i].id===self.activeConvId) { self.conversations[i].updatedAt=msg.timestamp; self.conversations[i].lastMessage=content; break; } }
-      self.renderConversationList(); document.getElementById('sendBtn').disabled = false;
-    }).catch(function(e){self.toast('傳送失敗: '+e.message,'error');document.getElementById('sendBtn').disabled=false;});
+  scrollToBottom:function(){requestAnimationFrame(function(){document.getElementById('messageContainer').scrollTop=document.getElementById('messageContainer').scrollHeight;});},
+  sendMessage:function(){var self=this,inp=document.getElementById('messageInput'),c=inp.value.trim();if(!c||!self.activeConvId)return;
+    document.getElementById('sendBtn').disabled=true;var m={id:'m'+Date.now()+Math.random().toString(36).slice(2,8),content:c,timestamp:new Date().toISOString()};inp.value='';inp.focus();
+    self.apiClient.call('addMessage',{convId:self.activeConvId,message:JSON.stringify(m)}).then(function(){m.sender=self.profile.email;m.senderName=self.profile.name;self.messages.push(m);self.renderMessages();
+      for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===self.activeConvId){self.conversations[i].updatedAt=m.timestamp;self.conversations[i].lastMessage=c;break;}}
+      self.renderConversationList();document.getElementById('sendBtn').disabled=false;}).catch(function(e){self.toast('傳送失敗: '+e.message,'error');document.getElementById('sendBtn').disabled=false;});
   },
-  startPolling: function () { var self=this; self.stopPolling(); self.pollTimer=setInterval(function(){self.checkForUpdates();},CONFIG.POLL_INTERVAL); },
-  stopPolling: function () { if (this.pollTimer) { clearInterval(this.pollTimer); this.pollTimer=null; } },
-  checkForUpdates: function () {
-    var self=this; if (!self.activeConvId) return;
+  startPolling:function(){var self=this;self.stopPolling();self.pollTimer=setInterval(function(){self.checkForUpdates();},CONFIG.POLL_INTERVAL);},
+  stopPolling:function(){if(this.pollTimer){clearInterval(this.pollTimer);this.pollTimer=null;}},
+  checkForUpdates:function(){var self=this;if(!self.activeConvId)return;
     self.apiClient.call('getMessages',{convId:self.activeConvId}).then(function(msgs){
-      if (msgs.length!==self.messages.length) {
-        self.messages=msgs||[]; self.renderMessages();
-        if (msgs.length>0) { var last=msgs[msgs.length-1]; for (var i=0;i<self.conversations.length;i++) { if (self.conversations[i].id===self.activeConvId) { self.conversations[i].updatedAt=last.timestamp; self.conversations[i].lastMessage=last.content; break; } } self.renderConversationList(); }
-      }
+      if(msgs.length!==self.messages.length){self.messages=msgs||[];self.renderMessages();if(msgs.length>0){var l=msgs[msgs.length-1];for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===self.activeConvId){self.conversations[i].updatedAt=l.timestamp;self.conversations[i].lastMessage=l.content;break;}}self.renderConversationList();}}
     }).catch(function(){});
   },
-  createConversation: function () {
-    var self=this; var input=document.getElementById('newChatName'); var name=input.value.trim();
-    if (!name) { self.toast('請輸入對話名稱','error'); return; }
-    self.showLoading(true);
-    self.apiClient.call('createConversation',{name:name}).then(function(result){
-      var now=new Date().toISOString();
-      var conv={id:result.convId,name:name,participants:[self.profile.email],createdBy:self.profile.email,createdAt:now,updatedAt:now,lastMessage:''};
-      self.conversations.unshift(conv); self.hideNewChatModal(); input.value=''; self.renderConversationList(); return self.selectConversation(conv.id);
-    }).catch(function(e){self.toast('建立失敗: '+e.message,'error');}).then(function(){self.showLoading(false);});
+  createConversation:function(){var self=this,inp=document.getElementById('newChatName'),n=inp.value.trim();if(!n){self.toast('請輸入對話名稱','error');return;}
+    self.showLoading(true);self.apiClient.call('createConversation',{name:n}).then(function(r){var now=new Date().toISOString(),cv={id:r.convId,name:n,participants:[self.profile.email],createdBy:self.profile.email,createdAt:now,updatedAt:now,lastMessage:''};
+      self.conversations.unshift(cv);self.hideNewChatModal();inp.value='';self.renderConversationList();return self.selectConversation(cv.id);}).catch(function(e){self.toast('建立失敗: '+e.message,'error');}).then(function(){self.showLoading(false);});
   },
-  addParticipant: function () {
-    var self=this; var input=document.getElementById('participantEmail'); var email=input.value.trim();
-    if (!email) { self.toast('請輸入 Email','error'); return; }
-    if (!self.activeConvId) return;
-    self.showLoading(true);
-    self.apiClient.call('addParticipant',{convId:self.activeConvId,email:email}).then(function(){
-      for (var i=0;i<self.conversations.length;i++) { if (self.conversations[i].id===self.activeConvId) { if (self.conversations[i].participants.indexOf(email)===-1) self.conversations[i].participants.push(email); document.getElementById('chatParticipants').textContent='參與者: '+self.conversations[i].participants.join(', '); break; } }
-      self.hideParticipantModal(); input.value=''; self.toast('已新增參與者: '+email,'success'); self.showLoading(false);
-    }).catch(function(e){self.toast('新增失敗: '+e.message,'error');self.showLoading(false);});
+  addParticipant:function(){var self=this,inp=document.getElementById('participantEmail'),e=inp.value.trim();if(!e){self.toast('請輸入 Email','error');return;}if(!self.activeConvId)return;
+    self.showLoading(true);self.apiClient.call('addParticipant',{convId:self.activeConvId,email:e}).then(function(){
+      for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===self.activeConvId){if(self.conversations[i].participants.indexOf(e)===-1)self.conversations[i].participants.push(e);
+        document.getElementById('chatParticipants').textContent='參與者: '+self.conversations[i].participants.join(', ');break;}}
+      self.hideParticipantModal();inp.value='';self.toast('已新增參與者: '+e,'success');self.showLoading(false);}).catch(function(e){self.toast('新增失敗: '+e.message,'error');self.showLoading(false);});
   },
-  deleteConversation: function (convId) {
-    var self=this; if (!confirm('確定刪除此對話？')) return;
-    self.showLoading(true);
-    self.apiClient.call('deleteConversation',{convId:convId}).then(function(){
-      var newList=[]; for (var i=0;i<self.conversations.length;i++) { if (self.conversations[i].id!==convId) newList.push(self.conversations[i]); }
-      self.conversations=newList; if (self.activeConvId===convId) { self.showEmptyState(); self.stopPolling(); }
-      self.renderConversationList(); self.showLoading(false);
+  deleteConversation:function(id){var self=this;if(!confirm('確定刪除此對話？'))return;
+    self.showLoading(true);self.apiClient.call('deleteConversation',{convId:id}).then(function(){
+      var nl=[];for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id!==id)nl.push(self.conversations[i]);}
+      self.conversations=nl;if(self.activeConvId===id){self.showEmptyState();self.stopPolling();}self.renderConversationList();self.showLoading(false);
     }).catch(function(e){self.toast('刪除失敗: '+e.message,'error');self.showLoading(false);});
   },
-  showNewChatModal: function () { document.getElementById('newChatModal').classList.remove('hidden'); document.getElementById('newChatName').focus(); },
-  hideNewChatModal: function () { document.getElementById('newChatModal').classList.add('hidden'); document.getElementById('newChatName').value=''; },
-  showParticipantModal: function () { if (!this.activeConvId) { this.toast('請先選擇一個對話','error'); return; } document.getElementById('addParticipantModal').classList.remove('hidden'); document.getElementById('participantEmail').focus(); },
-  hideParticipantModal: function () { document.getElementById('addParticipantModal').classList.add('hidden'); document.getElementById('participantEmail').value=''; },
-  logout: function () { this.stopPolling(); this.profile=null; this.conversations=[]; this.activeConvId=null; this.messages=[]; localStorage.removeItem('chatapp_idtoken'); localStorage.removeItem('chatapp_idtoken_expiry'); this.showLogin(); },
-  toast: function (msg, type) { var el=document.getElementById('toast'); el.textContent=msg; el.className=type||''; el.classList.remove('hidden'); clearTimeout(this._toastTimer); this._toastTimer=setTimeout(function(){el.classList.add('hidden');},3000); },
-  _escape: function (str) { var d=document.createElement('div'); d.textContent=str; return d.innerHTML; },
-  _formatTime: function (iso) { if (!iso) return ''; var d=new Date(iso); var now=new Date(); var isToday=d.toDateString()===now.toDateString(); var time=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}); if (isToday) return time; var date=d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'}); return date+' '+time; }
+  showNewChatModal:function(){document.getElementById('newChatModal').classList.remove('hidden');document.getElementById('newChatName').focus();},
+  hideNewChatModal:function(){document.getElementById('newChatModal').classList.add('hidden');document.getElementById('newChatName').value='';},
+  showParticipantModal:function(){if(!this.activeConvId){this.toast('請先選擇一個對話','error');return;}document.getElementById('addParticipantModal').classList.remove('hidden');document.getElementById('participantEmail').focus();},
+  hideParticipantModal:function(){document.getElementById('addParticipantModal').classList.add('hidden');document.getElementById('participantEmail').value='';},
+  logout:function(){this.stopPolling();this.profile=null;this.conversations=[];this.activeConvId=null;this.messages=[];localStorage.removeItem('chatapp_email');localStorage.removeItem('chatapp_name');this.showLogin();},
+  toast:function(m,t){var e=document.getElementById('toast');e.textContent=m;e.className=t||'';e.classList.remove('hidden');clearTimeout(this._t);this._t=setTimeout(function(){e.classList.add('hidden');},3000);},
+  _e:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;},
+  _t:function(i){if(!i)return'';var d=new Date(i),n=new Date(),isT=d.toDateString()===n.toDateString(),t=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});if(isT)return t;return d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})+' '+t;}
 };
-function decodeJWT(token) { var b=token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'); while (b.length%4) b+='='; return JSON.parse(atob(b)); }
+function decodeJWT(t){var b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';return JSON.parse(atob(b));}
 document.addEventListener('DOMContentLoaded',function(){App.init();});
 </script>
 </body>
