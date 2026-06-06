@@ -205,8 +205,8 @@ input:focus{outline:none;border-color:#1a73e8}
 <script src="https://accounts.google.com/gsi/client"></script>
 <script>
 var CONFIG = {
-  CLIENT_ID: '568538555158-1vli43gj6i7on3mn5e1vpt0sjbhvp9tn.apps.googleusercontent.com',
-  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwZnRGIwOj2guh4bla04K_pFoV09E5yHrQ1iNzZOn3HkwfnIAWNM5aLpGKORreMDL_vWg/exec',
+  CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',
+  APPS_SCRIPT_URL: 'YOUR_APPS_SCRIPT_URL_HERE',
   POLL_INTERVAL: 3000
 };
 </script>
@@ -338,10 +338,12 @@ var App = {
   },
   scrollToBottom:function(){requestAnimationFrame(function(){document.getElementById('messageContainer').scrollTop=document.getElementById('messageContainer').scrollHeight;});},
   sendMessage:function(){var self=this,inp=document.getElementById('messageInput'),c=inp.value.trim();if(!c||!self.activeConvId)return;
-    document.getElementById('sendBtn').disabled=true;var m={id:'m'+Date.now()+Math.random().toString(36).slice(2,8),content:c,timestamp:new Date().toISOString()};inp.value='';inp.focus();
-    self.apiClient.call('addMessage',{convId:self.activeConvId,message:JSON.stringify(m)}).then(function(){m.sender=self.profile.email;m.senderName=self.profile.name;self.messages.push(m);self.renderMessages();
-      for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===self.activeConvId){self.conversations[i].updatedAt=m.timestamp;self.conversations[i].lastMessage=c;break;}}
-      self.renderConversationList();document.getElementById('sendBtn').disabled=false;}).catch(function(e){self.toast('傳送失敗: '+e.message,'error');document.getElementById('sendBtn').disabled=false;});
+    var m={id:'m'+Date.now()+Math.random().toString(36).slice(2,8),content:c,timestamp:new Date().toISOString(),sender:self.profile.email,senderName:self.profile.name};
+    inp.value='';inp.focus();
+    self.messages.push(m);self.renderMessages();
+    for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===self.activeConvId){self.conversations[i].updatedAt=m.timestamp;self.conversations[i].lastMessage=c;break;}}
+    self.renderConversationList();
+    self.apiClient.call('addMessage',{convId:self.activeConvId,message:JSON.stringify({content:c,timestamp:m.timestamp})}).catch(function(e){self.toast('傳送失敗: '+e.message,'error');});
   },
   startPolling:function(){var self=this;self.stopPolling();self.pollTimer=setInterval(function(){self.checkForUpdates();},CONFIG.POLL_INTERVAL);},
   stopPolling:function(){if(this.pollTimer){clearInterval(this.pollTimer);this.pollTimer=null;}},
