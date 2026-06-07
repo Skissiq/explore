@@ -100,6 +100,23 @@ input:focus{outline:none;border-color:#1a73e8}
 #toast.error{background:#d93025}
 #toast.success{background:#188038}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#menuBtn{display:none;width:36px;height:36px;border-radius:50%;align-items:center;justify-content:center;color:#5f6368;flex-shrink:0}
+#menuBtn:hover{background:#f5f5f5}
+.sidebar-overlay{display:none}
+@media(max-width:768px){
+  #sidebar{position:fixed;top:0;left:0;width:280px;min-width:280px;z-index:100;transform:translateX(-100%);transition:transform .25s ease;box-shadow:2px 0 12px rgba(0,0,0,.15)}
+  #sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:block;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s ease}
+  .sidebar-overlay.show{opacity:1;pointer-events:auto}
+  #menuBtn{display:flex}
+  .message-wrapper{max-width:92%}
+  #messageContainer{padding:12px 12px}
+  .chat-input{padding:10px 12px 14px}
+  .chat-header{padding:10px 12px}
+  .chat-header-info h3{font-size:14px}
+  .login-card{padding:32px 24px}
+  .modal{padding:0}
+}
 </style>
 </head>
 <body>
@@ -128,9 +145,11 @@ input:focus{outline:none;border-color:#1a73e8}
 </div>
 
 <div id="appScreen" class="hidden">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
   <aside id="sidebar">
     <div class="sidebar-header">
       <h2>對話</h2>
+      <button id="closeSidebarBtn" class="modal-close" title="關閉" style="display:none">&times;</button>
       <button id="newChatBtn" title="新增對話"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg></button>
     </div>
     <div id="conversationList"></div>
@@ -154,6 +173,7 @@ input:focus{outline:none;border-color:#1a73e8}
     </div>
     <div id="chatView" class="hidden">
       <div class="chat-header">
+        <button id="menuBtn" title="選單"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M3 5h14a1 1 0 110 2H3a1 1 0 010-2zm0 4h14a1 1 0 110 2H3a1 1 0 110-2zm0 4h14a1 1 0 110 2H3a1 1 0 110-2z"/></svg></button>
         <div class="chat-header-info">
           <h3 id="chatName"></h3>
           <span id="chatParticipants" class="chat-participants"></span>
@@ -274,6 +294,9 @@ var App = {
     document.getElementById('sendBtn').onclick = function () { self.sendMessage(); };
     document.getElementById('messageInput').onkeydown = function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); self.sendMessage(); } };
     document.getElementById('addParticipantBtn').onclick = function () { self.showParticipantModal(); };
+    document.getElementById('menuBtn').onclick = function () { self.toggleSidebar(true); };
+    document.getElementById('closeSidebarBtn').onclick = function () { self.toggleSidebar(false); };
+    document.getElementById('sidebarOverlay').onclick = function () { self.toggleSidebar(false); };
     document.getElementById('confirmPassword').onclick = function () { self.checkPasswordInput(); };
     document.getElementById('passwordInput').onkeydown = function (e) { if (e.key === 'Enter') self.checkPasswordInput(); };
     document.getElementById('cancelPassword').onclick = function () { self.hidePasswordModal(); };
@@ -346,7 +369,7 @@ var App = {
   selectConversation: function(id){var self=this;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}if(!c)return;
     if(c.hasPassword&&!self.unlocked[id]&&c.createdBy!==self.profile.email){self._pendingConv=id;self.showPasswordModal();return;}
     self._openConversation(id);},
-  _openConversation:function(id){var self=this;self.activeConvId=id;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}
+  _openConversation:function(id){var self=this;self.toggleSidebar(false);self.activeConvId=id;var c=null;for(var i=0;i<self.conversations.length;i++){if(self.conversations[i].id===id){c=self.conversations[i];break;}}
     document.getElementById('emptyState').classList.add('hidden');document.getElementById('chatView').classList.remove('hidden');
     document.getElementById('chatName').textContent=c.name;document.getElementById('chatParticipants').textContent=(c.participants||[]).length?'參與者: '+(c.participants||[]).join(', '):'';
     self.renderConversationList();self.showLoading(true);
@@ -408,6 +431,7 @@ var App = {
     }).catch(function(e){self.showLoading(false);document.getElementById('passwordError').textContent='驗證失敗: '+e.message;document.getElementById('passwordError').style.display='block';});
   },
   logout:function(){this.stopPolling();this.profile=null;this.conversations=[];this.activeConvId=null;this.messages=[];localStorage.removeItem('chatapp_email');localStorage.removeItem('chatapp_name');this.showLogin();},
+  toggleSidebar:function(show){var s=document.getElementById('sidebar'),o=document.getElementById('sidebarOverlay'),b=document.getElementById('closeSidebarBtn');if(show){s.classList.add('open');o.classList.add('show');b.style.display='flex';}else{s.classList.remove('open');o.classList.remove('show');b.style.display='none';}},
   toast:function(m,t){var e=document.getElementById('toast');e.textContent=m;e.className=t||'';e.classList.remove('hidden');clearTimeout(this._t);this._t=setTimeout(function(){e.classList.add('hidden');},3000);},
   _e:function(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;},
   _t:function(i){if(!i)return'';var d=new Date(i),n=new Date(),isT=d.toDateString()===n.toDateString(),t=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});if(isT)return t;return d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'})+' '+t;}
